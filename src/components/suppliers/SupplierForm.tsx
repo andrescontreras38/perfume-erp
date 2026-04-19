@@ -25,7 +25,9 @@ export default function SupplierForm({ supplier, onSuccess }: SupplierFormProps)
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: supplier ?? { nombre: "", telefono: "", ciudad: "", notas: "" },
+    defaultValues: supplier
+      ? { nombre: supplier.nombre, telefono: supplier.telefono ?? "", ciudad: supplier.ciudad ?? "", notas: supplier.notas ?? "" }
+      : { nombre: "", telefono: "", ciudad: "", notas: "" },
   });
 
   async function onSubmit(data: FormData) {
