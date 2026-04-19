@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  VIEWER
+}
+
+// ─── Catalog ──────────────────────────────────────────────────────────────────
+
+model Product {
+  id            String            @id @default(cuid())
+  sku           String            @unique
+  nombre        String
+  marca         String
+  descripcion   String?
+  categoria     Categoria
+  tamanioMl     Int?
+  precioCosto   Decimal           @default(0) @db.Decimal(12, 2)
+  precioVenta   Decimal           @default(0) @db.Decimal(12, 2)
+  margen        Decimal           @default(0) @db.Decimal(8, 4)
+  stock         Int               @default(0)
+  stockMinimo   Int               @default(5)
+  estado        Boolean           @default(true)
+  shopifyId     String?           @unique
+  shopifyHandle String?
+  suppliers     ProductSupplier[]
+  purchases     Purchase[]
+  images        Image[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([marca])
+  @@index([categoria])
+  @@index([estado])
+}
+
+enum Categoria {
+  HOMBRE
+  MUJER
+  UNISEX
+}
+
+// ─── Suppliers ────────────────────────────────────────────────────────────────
+
+model Supplier {
+  id        String            @id @default(cuid())
+  nombre    String
+  telefono  String?
+  ciudad    String?
+  notas     String?
+  products  ProductSupplier[]
+  purchases Purchase[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ProductSupplier {
+  id           String   @id @default(cuid())
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    String
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId   String
+  precioCompra Decimal  @db.Decimal(12, 2)
+  esPrincipal  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([productId, supplierId])
+  @@index([productId])
+}
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+model Purchase {
+  id           String   @id @default(cuid())
+  product      Product  @relation(fields: [productId], references: [id])
+  productId    String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  supplierId   String
+  cantidad     Int
+  precioCompra Decimal  @db.Decimal(12, 2)
+  total        Decimal  @db.Decimal(12, 2)
+  notas        String?
+  fecha        DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([productId])
+  @@index([fecha])
+}
+
+// ─── Media ────────────────────────────────────────────────────────────────────
+
+model Image {
+  id          String   @id @default(cuid())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  url         String
+  publicId    String
+  esPrincipal Boolean  @default(false)
+  orden       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+}
